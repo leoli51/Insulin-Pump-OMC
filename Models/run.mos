@@ -1,0 +1,37 @@
+loadModel(Modelica);
+getErrorString();
+
+loadFile("Connectors.mo");
+getErrorString();
+
+loadFile("F.mo");
+getErrorString();
+
+loadFile("Kempt.mo");
+getErrorString();
+
+loadFile("Mealgen.mo");
+getErrorString();
+
+loadFile("MonitorF.mo");
+getErrorString();
+
+loadFile("MonitorNF.mo");
+getErrorString();
+
+loadFile("Patient.mo");
+getErrorString();
+
+loadFile("Pump.mo");
+getErrorString();
+
+loadFile("System.mo");
+getErrorString();
+
+simulate(System, stopTime=1440, method="rungekutta");//1 giorno
+//simulate(System, stopTime=2880, method="rungekutta");//2 giorni
+getErrorString();
+
+plot({mgn.meal , patient.glucose, pump.insulinOutput}, externalWindow=true);
+//plot({mF.insuNEG,mF.problemiGlucosio, mF.T_outofBounds,pat.glucose}, externalWindow=true);//monitor
+getErrorString();
