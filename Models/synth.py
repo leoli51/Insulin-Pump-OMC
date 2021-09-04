@@ -93,8 +93,6 @@ for corr in range(1, 11, 1):
                                 num_fail += 1.0
                                 with open ("output.txt", 'a') as g:
                                         g.write("Correzione = "+str(corr)+", Test:"+str(i)+".\nFAIL con parametri:\n"+stringa+"\n")
-                                        g.flush()
-                                        os.fsync(g)
                                 break
                 except TypeError:
                         num_fail+=1

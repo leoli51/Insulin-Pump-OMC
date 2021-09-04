@@ -4,6 +4,10 @@ model Patient
 InputReal insulinInput;   // insulin input
 InputReal meal;           // variable representing the meals of the patient 20 if the patient is eating 0 otherwise
 OutputReal glucose;       // glucose level of the patient"
+//Modelica.Blocks.Continuous.Integrator glucoseMean;
+//Modelica.Blocks.Discrete.Sampler glucose_sampler(samplePeriod = 1);
+Real glucose_integral;
+Real glucose_mean;
 
 //Patient data (default values)
 parameter Integer Sex = 0;                        //0 [0-1]; 0=F, 1=M
@@ -163,6 +167,13 @@ ISRb = CPb * k01 * Vc;
 ISR = ISRs + ISRd + ISRb;
 der(ISRs) = -alpha_delay * (ISRs - Vc * phi_s * (glucose - h));
 ISRd = if (der(glucose) >= 0) then Vc * phi_d * der(glucose) else 0;
+
+//connect(glucose_sampler.u, glucose);
+//connect(glucoseMean.u, glucose_sampler.y);
+der(glucose_integral) = glucose;
+
+algorithm
+glucose_mean := if (time==0) then 0 else glucose_integral / time;
 
 end Patient;
 

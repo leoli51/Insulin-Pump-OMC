@@ -1,0 +1,9 @@
+**/*.c
+**/*.h
+**/*.o
+**/*.makefile
+**/*.libs
+**/*.log
+**/*.output
+**/*.xml
+**/*.json

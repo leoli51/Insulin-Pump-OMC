@@ -9,6 +9,9 @@ parameter Real T=0.1;
 parameter Real target=100;  //target glucosio
 parameter Real range=15;    //range accettabile rispetto al target
 Real timeOutOfOptimalRange; //tempo fuori dal range ottimale del glucosio
+//Real glucoseMean=0;
+//Real glucoseSum=0;
+//Integer glucoseSamples=0;
 Boolean glucoseOutOfBounds; //true se il glucosio <50 o>200
 Boolean glucoseCritical;
 Boolean insulinOutOfBounds;
@@ -32,6 +35,12 @@ when sample(0,T) then
         timeOutOfOptimalRange:=pre(timeOutOfOptimalRange)+(T*(abs(target-glucose)/100));
     end if;
 end when;
+
+//when sample(0,1) then 
+//    glucoseSamples := pre(glucoseSamples) + 1;
+//    glucoseSum := pre(glucoseSum) + glucose;
+//    glucoseMean := glucoseSum / glucoseSamples;
+//end when;
 
 //controllo glucosio<50
 when edge(glucoseOutOfBounds) then

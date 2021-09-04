@@ -10,11 +10,34 @@ import random
 import glob
 from OMPython import OMCSessionZMQ
 
-def ebstop():
-        # one may want to sample until
-        # the estimated error is within some small number ǫ of
-        # the true error with probability at least 1 − δ.
-        
+
+def compute_mean(samples):
+        return sum(samples) / len(samples)
+
+def compute_ct(samples, t, mean, delta, rv_range):
+        #t = len(samples)
+        # first: 
+        #       compute standard deviation based on the samples we collected
+        #       note: for efficiency we compute the mean before     
+        standard_deviation = 0
+        for sample in samples:
+                standard_deviation += (sample - mean)**2
+        standard_deviation /= t
+        standard_deviation = standard_deviation ** 0.5
+
+        # second: 
+        #        compute dt:
+        #        dt must satisfy the property: sum(dt, t=1, t=infinity) <= delta
+        #        therefore we use the 1/2^t sequence multiplied by delta
+        #        since 1/2^t converges to 1 multiplied by delta it converges to delta
+        dt = delta / (2**(len(samples)/10))
+
+        # third:
+        #        compute ct
+        ct = standard_deviation * (2 * math.log(3 / dt) / t)**0.5 + 3 * rv_range * math.log(3 / dt) / t
+
+        return ct
+
 
 VERIFY_LOG_FILE = "verify.log"
 VERIFY_OUTPUT_FILE = "verify.output"
@@ -50,58 +73,84 @@ with open (VERIFY_OUTPUT_FILE, 'wt') as f:
 with open('PatientDataRanges.json') as f:
         patient_data_ranges = json.load(f)
 
-N = 100    # numero di samples
-# TODO add ebstop algorithm 
+samples_per_step = 10   # number of samples for each step
+delta = .1              # delta , given in input                       
+error = .1              # error, given in input 
+rv_range = 150          # glucose range value...
+
+lower_bound = 0
+upper_bound = 1<<32
+
+test_num = 0
 
 tests_failed = 0
 
-# run N simulations, for each simulation generate a new set of parameters
-for i in range(N):
-        print "Test "+str(i+1)
-        with open ("modelica_rand.in", 'wt') as f:
-                parameter_string=""
-                
-                #generate random patient parameters
-                for p_name, p_values in patient_data_ranges.items():
-                        val = None
-                        if p_name == "Sex":
-                                val = random.choice(p_values)
-                        else:
-                                val = random.uniform(p_values[0], p_values[1])
+verify_log_string = ""
+verify_output_string = ""
+
+while (1 + error) * lower_bound < (1 - error) * upper_bound:
+        # run samples_per_step simulations, for each simulation generate a new set of parameters
+        # use ebstop algorithm to determine when to stop
+        samples = []
+
+        for i in range(samples_per_step):
+                test_num += 1
+                print "Test "+str(test_num)
+                with open ("modelica_rand.in", 'wt') as f:
+                        parameter_string=""
                         
-                        parameter_string +="patient."+p_name+"="+str(val)+"\n"
+                        #generate random patient parameters
+                        for p_name, p_values in patient_data_ranges.items():
+                                val = None
+                                if p_name == "Sex":
+                                        val = random.choice(p_values)
+                                else:
+                                        val = random.uniform(p_values[0], p_values[1])
+                                
+                                parameter_string +="patient."+p_name+"="+str(val)+"\n"
 
-                #trovo valori random per i seed cosi' da variare le mc
-                #parameter_string+="pat.mc.localSeed="+str(random.randint(1000,999999))
-                #parameter_string+="\npat.mc.globalSeed="+str(random.randint(1000,999999))
-                #parameter_string+="\nmgn.mc2.localSeed="+str(random.randint(1000,999999))
-                #parameter_string+="\nmgn.mc2.globalSeed="+str(random.randint(1000,999999))+"\n"
-                f.write(parameter_string)
+                        f.write(parameter_string)
 
-        with open (VERIFY_LOG_FILE, 'a') as f:
-                f.write("\nTest "+str(i+1)+":\n")
+                verify_log_string += "\nTest "+str(test_num)+":\n"
 
-        # run simulation
-        os.system("./System -overrideFile=modelica_rand.in -s=rungekutta  >> %s" % VERIFY_LOG_FILE)
+                # run simulation
+                os.system("./System -overrideFile=modelica_rand.in -s=rungekutta  >> %s" % VERIFY_LOG_FILE)
 
-        # mi permette di vedere il valore del monitor del glucosio alla fine della simulazione
-        glucose_critical = omc.sendExpression("val(mF.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")")
-        insulin_critical = omc.sendExpression("val(mF.insulinCritical, "+str(stopTime)+", \"System_res.mat\")")
+                # mi permette di vedere il valore del monitor del glucosio alla fine della simulazione
+                glucose_critical = omc.sendExpression("val(mF.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")")
+                insulin_critical = omc.sendExpression("val(mF.insulinCritical, "+str(stopTime)+", \"System_res.mat\")")
+                
+                # collect glucose mean sample
+                glucose_mean = omc.sendExpression("val(patient.glucose_mean, "+str(stopTime)+", \"System_res.mat\")")
+                samples.append(glucose_mean)
 
-        #tempo fuori dal range ottimale di glucosio
-        time_out_of_bounds = omc.sendExpression("val(mF.T_outofBounds, "+str(stopTime)+", \"System_res.mat\")")
+                #tempo fuori dal range ottimale di glucosio
+                time_out_of_bounds = omc.sendExpression("val(mF.timeOutOfOptimalRange, "+str(stopTime)+", \"System_res.mat\")")
 
-        with open (VERIFY_OUTPUT_FILE, 'a') as f:
-                f.write("Test "+str(i+1))
-
+                verify_output_string += "Test "+str(test_num)
                 if not (insulin_critical or glucose_critical):
-                        f.write(" No error detected")
+                        verify_output_string += " No error detected"
                 else:
-                        f.write(" Critical insulin levels detected" * insulin_critical + " Critical glucose levels detected" * glucose_critical)
+                        verify_output_string += " Critical insulin levels detected" * insulin_critical + " Critical glucose levels detected" * glucose_critical
                         tests_failed += 1
 
-                f.write("_______________\n\n")
+                verify_output_string += "_______________\n\n"
 
+        # Empirical Bernstein Stopping algorithm to see if we should continue sampling
+        mean_rv_t = compute_mean(samples)
+        ct = compute_ct(samples, test_num, mean_rv_t, delta, rv_range)
+
+        lower_bound = max(lower_bound, mean_rv_t - ct)
+        upper_bound = min(upper_bound, mean_rv_t + ct)
+
+        print "Mean RV: %f ct: %f LB: %f UB: %f" % (mean_rv_t, ct, lower_bound, upper_bound)
+
+print "Executed: %d tests. Desired accuracy reached!" % len(samples)
+
+with open (VERIFY_LOG_FILE, 'a') as f:
+        f.write(verify_log_string)
+with open (VERIFY_OUTPUT_FILE, 'a') as f:
+        f.write(verify_output_string)
 
 total_time=time.time()-start
 print " "
