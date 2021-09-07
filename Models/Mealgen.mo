@@ -1,10 +1,10 @@
 block MealGenerator
 
-OutputReal meal;
+OutputReal eating;
 
-parameter Real Meal_length = 60;  // lenght of meal (minutes)
-parameter Real Meal_period = 480;  // periodic meals: every 8 hours.
-
+parameter Real meal_length = 60;  // lenght of meal (minutes)
+parameter Real meals_per_day = 4;  // periodic meals: every 8 hours.
+Real meal_period = 1440 / meals_per_day;
 Boolean meal_on, meal_off;
 
 initial equation
@@ -15,18 +15,18 @@ equation
 
 // periodic meal of duration Meal_length every Meal_period minutes
 
-when sample(0, Meal_period/2) then
+when sample(0, meal_period/2) then
 meal_on = not(pre(meal_on));
 end when;
 
-when sample(Meal_length, Meal_period/2) then
+when sample(meal_length, meal_period/2) then
 meal_off = not(pre(meal_off));
 end when;
 
 when edge(meal_on) then
-    meal = 20;
+    eating = 1;
 elsewhen edge(meal_off) then
-    meal = 0;
+    eating = 0;
 end when;
 
 

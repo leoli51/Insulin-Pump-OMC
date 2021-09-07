@@ -1,71 +1,71 @@
+// Insulin Pump model
 block Pump
-//modello della pompa di insulina
 
-InputReal glucose;    //quantita' di glucosio del paziente
-OutputReal insulinOutput;   //quantita' di insulina da dare al paziente
+InputReal glucose;          // glucose level of patient
+OutputReal insulinOutput;   // insulin output
 
 //Pump parameters
-parameter Real T = 10; //sampling time della pompa(ogni 10 minuti)
-parameter Real targetmin = 90; //lower bound del range di glucosio target
-parameter Real targetmax = 110; //upper bound del range di glucosio target
+parameter Real T = 10;          // sampling time of the pump (10 minutes)
+parameter Real targetmin = 90;  // lower bound of target glucose range
+parameter Real targetmax = 110; // upper bound of target glucose range
 parameter Real mindose = 1;
 parameter Real corr = 6.2;
-parameter Real change = 1;
+parameter Real change = 1;      
 
-Real pre;//valore di glucosio all'ultimo sample time
-Real prepre;//valore di glucosio all'penultimo sample time
+Real prev;       // glucose value at time - 1
+Real prevprev;   // glucose value at time - 2
 Real insulin;
 
 initial equation
 insulin = 0;
-pre = glucose;
-prepre = glucose;
+prev = glucose;
+prevprev = glucose;
 
 
 algorithm
 
 when sample(0, T) then
-//Glucosio Basso
+// glucose level: low
 if (glucose < targetmin) then
   insulin := 0;
 
-//Glucosio Alto
+// glucose level: high
 elseif (glucose > targetmax) then
-  //In aumento
-  if (glucose > pre) then
-    insulin := max(((glucose - pre) / change), mindose);
-  //In discesa
-  elseif (glucose < pre) then
-    if ( (glucose - pre) <= (pre - prepre) ) then
+  // raising
+  if (glucose > prev) then
+    insulin := max(((glucose - prev) / change), mindose);
+  // dropping
+  elseif (glucose < prev) then
+    if ( (prev - glucose) >= (prevprev - prev) ) then
       insulin := 0;
     else
       insulin := mindose;
     end if;
-  //Stabile
+  // stable
   else
     insulin := mindose;
   end if;
 
-//Glucosio accettabile
+// glucose level: acceptable
 else
-  //In dimunuzione o stabile
-  if (glucose <= pre) then
+  // dropping
+  if (glucose <= prev) then
     insulin := 0;
-  //In aumento, ma con velocita' in diminuzione
-  elseif (glucose > pre and (glucose - pre) < (pre - prepre) ) then
+  // raising (negative order 2 derivative)
+  elseif (glucose > prev and (glucose - prev) - (prev - prevprev) < 0) then
     insulin := 0;
-  //In aumento, e con velocita' in aumento
+  // raising (positive order 2 derivative)
   else
-    if (((glucose - pre) / change) > mindose) then
-      insulin := ((glucose - pre) / change);
+    if (((glucose - prev) / change) > mindose) then
+      insulin := ((glucose - prev) / change);
     else 
       insulin := mindose;
     end if;
   end if;
 end if;
 
-prepre := pre;
-pre := glucose;
+prevprev := prev;
+prev := glucose;
 insulinOutput := insulin*corr;
 end when;
 end Pump;

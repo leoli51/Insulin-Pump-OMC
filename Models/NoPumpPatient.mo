@@ -1,10 +1,11 @@
-model Patient
+model NoPumpPatient
 // Patient model (based on "Roberto Visentin, Claudio Cobelli, Chiara Dalla Man. The Padova Type 2 Diabetes Simulator from Triple-Tracer Single Meal Studies: In Silico Trials also possible in Rare but Not-So-Rare Individuals. Diabetes Technology and Therapeutics, 2020")
 
-InputReal insulinInput;   // insulin input
-InputReal eating;      // variable representing the meals of the patient 1 if the patient is eating 0 otherwise
+InputReal eating;           // variable representing the meals of the patient 20 if the patient is eating 0 otherwise
 OutputReal glucose;       // glucose level of the patient"
 
+//Modelica.Blocks.Continuous.Integrator glucoseMean;
+//Modelica.Blocks.Discrete.Sampler glucose_sampler(samplePeriod = 1);
 Real glucose_integral;
 Real glucose_mean;
 
@@ -13,8 +14,8 @@ parameter Integer Sex = 0;                        //0 [0-1]; 0=F, 1=M
 parameter Real Age    = 54.9;                     //54.9 [50-62]
 parameter Real Height = 168;                      //168 [163-175];
 parameter Real BW     = 96;                       //96 [83-104]
-parameter Real meal_dose = 400;                     
-Real BMI    = (BW / ((Height/100)^2));  //33.77 [28.25-37.14];
+parameter Real meal_dose = 400;
+parameter Real BMI    = (BW / ((Height/100)^2));  //33.77 [28.25-37.14];
 
 parameter Real k1   = 0.066 ; 
 parameter Real k2   = 0.043 ; 
@@ -88,6 +89,7 @@ Real X(start=0, fixed=true); Real risk;
 Real CP1; Real CP2;
 Real ISR; Real ISRs(start=0, fixed=true); Real ISRd; Real ISRb;
 
+
 //////////////////////////////////////////////////////////////////////////////
 initial equation
 Gp = Gpb;
@@ -103,6 +105,7 @@ CP2 = (k21 / k12)*CPb;
 
 //////////////////////////////////////////////////////////////////////////////
 equation
+
 //Glucose kinetics (A1)
 der(Gp) = EGP + RA_meal - Uii - E - (k1*Gp) + (k2*Gt);
 der(Gt) = -Uid + (k1*Gp) - (k2*Gt) ;
@@ -112,7 +115,7 @@ glucose = Gp/Vg;
 der(Il)  = -(m1 + m3)*Il + (m2*Ip + ISR/BW);
 der(Ip)  = -(m2 + m4 + m5)*Ip + m1*Il + m6*Iev;
 der(Iev) = -m6*Iev + m5*Ip;
-I = (Ip + insulinInput)/Vi;
+I = Ip/Vi;
 
 m3 = (HE * m1) / (1 - HE);
 HE = (-ag * glucose + a0g);
@@ -120,7 +123,7 @@ HE = (-ag * glucose + a0g);
 //Rate of appearance (A5-A6-A7-A8)
 Qsto = Qsto1 + Qsto2;
 der(Qsto1) = -Kmax*Qsto1 + eating * meal_dose;
-der(Qsto2) = -Kempt(b, d, Kmax, Kmin, meal_dose, Qsto)*Qsto2 + Kmax*Qsto1 ;
+der(Qsto2) = -Kempt(b, d, Kmax, Kmin, meal_dose, Qsto)*Qsto2 + Kmax*Qsto1;
 der(Qgut) =  -Kabs*Qgut + Kempt(b, d, Kmax, Kmin, meal_dose, Qsto)*Qsto2;
 RA_meal = (f * Kabs * Qgut) / BW;
 
@@ -168,5 +171,5 @@ der(glucose_integral) = glucose;
 algorithm
 glucose_mean := if (time == 0) then 0 else glucose_integral / time;
 
-end Patient;
+end NoPumpPatient;
 

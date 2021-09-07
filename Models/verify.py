@@ -117,8 +117,8 @@ while (1 + error) * lower_bound < (1 - error) * upper_bound:
                 os.system("./System -overrideFile=modelica_rand.in -s=rungekutta  >> %s" % VERIFY_LOG_FILE)
 
                 # mi permette di vedere il valore del monitor del glucosio alla fine della simulazione
-                glucose_critical = omc.sendExpression("val(mF.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")")
-                insulin_critical = omc.sendExpression("val(mF.insulinCritical, "+str(stopTime)+", \"System_res.mat\")")
+                glucose_critical = bool(omc.sendExpression("val(mF.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")"))
+                insulin_critical = bool(omc.sendExpression("val(mF.insulinCritical, "+str(stopTime)+", \"System_res.mat\")"))
                 
                 # collect glucose mean sample
                 glucose_mean = omc.sendExpression("val(patient.glucose_mean, "+str(stopTime)+", \"System_res.mat\")")
@@ -147,9 +147,9 @@ while (1 + error) * lower_bound < (1 - error) * upper_bound:
 
 print "Executed: %d tests. Desired accuracy reached!" % len(samples)
 
-with open (VERIFY_LOG_FILE, 'a') as f:
+with open (VERIFY_LOG_FILE, 'w') as f:
         f.write(verify_log_string)
-with open (VERIFY_OUTPUT_FILE, 'a') as f:
+with open (VERIFY_OUTPUT_FILE, 'w') as f:
         f.write(verify_output_string)
 
 total_time=time.time()-start
