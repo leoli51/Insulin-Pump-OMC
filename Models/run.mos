@@ -35,5 +35,5 @@ simulate(System, stopTime=1440, method="rungekutta");   // 1 day
 //simulate(System, stopTime=2880, method="rungekutta"); // 2 days
 getErrorString();
 
-plot({mgn.eating, patient.glucose_mean, patient.glucose, pump.insulinOutput, no_pump_patient.glucose}, externalWindow=true);
+plot({mgn.eating, patient.glucose_mean, patient.glucose, pump.insulinOutput, no_pump_patient.glucose, fm.timeOutOfOptimalRange}, externalWindow=true);
 getErrorString();
