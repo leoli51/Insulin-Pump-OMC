@@ -1,7 +1,10 @@
 block MealGenerator
 
 OutputReal eating;
+OutputReal meal_dose;                     
 
+
+parameter Real dose = 400;
 parameter Real meal_length = 60;  // lenght of meal (minutes)
 parameter Real meals_per_day = 4;  // periodic meals: every 8 hours.
 Real meal_period = 1440 / meals_per_day;
@@ -12,6 +15,8 @@ meal_on = false;
 meal_off = false;
 
 equation
+
+meal_dose = dose;
 
 // periodic meal of duration Meal_length every Meal_period minutes
 

@@ -13,10 +13,10 @@ getErrorString();
 loadFile("Mealgen.mo");
 getErrorString();
 
-loadFile("MonitorF.mo");
+loadFile("FMonitor.mo");
 getErrorString();
 
-loadFile("MonitorNF.mo");
+loadFile("NFMonitor.mo");
 getErrorString();
 
 loadFile("Patient.mo");
@@ -31,10 +31,9 @@ getErrorString();
 loadFile("System.mo");
 getErrorString();
 
-simulate(System, stopTime=1440, method="rungekutta");//1 giorno
-//simulate(System, stopTime=2880, method="rungekutta");//2 giorni
+simulate(System, stopTime=1440, method="rungekutta");   // 1 day
+//simulate(System, stopTime=2880, method="rungekutta"); // 2 days
 getErrorString();
 
 plot({mgn.eating, patient.glucose_mean, patient.glucose, pump.insulinOutput, no_pump_patient.glucose}, externalWindow=true);
-//plot({mF.insuNEG,mF.problemiGlucosio, mF.T_outofBounds,pat.glucose}, externalWindow=true);//monitor
 getErrorString();

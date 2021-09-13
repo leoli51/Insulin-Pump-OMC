@@ -3,6 +3,7 @@ model Patient
 
 InputReal insulinInput;   // insulin input
 InputReal eating;      // variable representing the meals of the patient 1 if the patient is eating 0 otherwise
+InputReal meal_dose;
 OutputReal glucose;       // glucose level of the patient"
 
 Real glucose_integral;
@@ -13,7 +14,6 @@ parameter Integer Sex = 0;                        //0 [0-1]; 0=F, 1=M
 parameter Real Age    = 54.9;                     //54.9 [50-62]
 parameter Real Height = 168;                      //168 [163-175];
 parameter Real BW     = 96;                       //96 [83-104]
-parameter Real meal_dose = 400;                     
 Real BMI    = (BW / ((Height/100)^2));  //33.77 [28.25-37.14];
 
 parameter Real k1   = 0.066 ; 
