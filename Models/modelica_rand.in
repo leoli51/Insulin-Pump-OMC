@@ -1,4 +1,5 @@
-patient.BW=89.4823225955
-patient.Age=56.3143008253
-patient.Height=163.905691387
-patient.Sex=F
+patient.BW=84.9397343326
+patient.Age=60.4077324598
+patient.Height=164.327861245
+patient.Sex=M
+pump.insulin_multiplier=6.7

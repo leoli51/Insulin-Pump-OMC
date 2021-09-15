@@ -1,6 +1,3 @@
-#script per verificare che il sistema funzioni in tutti i casi operativi possibili.
-#i test sono generati con distribuzione uniforme, dando a ogni possibile combinazione la stessa probabilita'
-#di essere usata nel test.
 import os
 import sys
 import math
@@ -74,7 +71,7 @@ with open('PatientDataRanges.json') as f:
         patient_data_ranges = json.load(f)
 
 samples_per_step = 10   # number of samples for each step
-delta = .1              # delta , given in input                       
+delta = .2              # delta , given in input                       
 error = .1              # error, given in input 
 rv_range = 150          # glucose range value...
 
@@ -93,8 +90,8 @@ while (1 + error) * lower_bound < (1 - error) * upper_bound:
         # use ebstop algorithm to determine when to stop
         samples = []
 
-        for i in range(samples_per_step):
-                test_num += 1
+        i = 0
+        while i < samples_per_step:
                 print "Test "+str(test_num)
                 with open ("modelica_rand.in", 'wt') as f:
                         parameter_string=""
@@ -116,27 +113,33 @@ while (1 + error) * lower_bound < (1 - error) * upper_bound:
                 # run simulation
                 os.system("./System -overrideFile=modelica_rand.in -s=rungekutta  >> %s" % VERIFY_LOG_FILE)
 
-                # mi permette di vedere il valore del monitor del glucosio alla fine della simulazione
-                glucose_critical = bool(omc.sendExpression("val(mF.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")"))
-                insulin_critical = bool(omc.sendExpression("val(mF.insulinCritical, "+str(stopTime)+", \"System_res.mat\")"))
+                # check if glucose levels crossed the critical threshold
+                glucose_critical = omc.sendExpression("val(fm.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")")
+                if type(glucose_critical) != float:
+                        continue
                 
                 # collect glucose mean sample
                 glucose_mean = omc.sendExpression("val(patient.glucose_mean, "+str(stopTime)+", \"System_res.mat\")")
                 samples.append(glucose_mean)
 
+                test_num += 1
+                i += 1
+
                 #tempo fuori dal range ottimale di glucosio
-                time_out_of_bounds = omc.sendExpression("val(mF.timeOutOfOptimalRange, "+str(stopTime)+", \"System_res.mat\")")
+                time_out_of_bounds = omc.sendExpression("val(fm.timeOutOfOptimalRange, "+str(stopTime)+", \"System_res.mat\")")
 
                 verify_output_string += "Test "+str(test_num)
-                if not (insulin_critical or glucose_critical):
-                        verify_output_string += " No error detected"
+                if glucose_critical:
+                        verify_output_string += " Critical glucose levels detected\n\n"
+                        tests_failed += 1   
                 else:
-                        verify_output_string += " Critical insulin levels detected" * insulin_critical + " Critical glucose levels detected" * glucose_critical
-                        tests_failed += 1
-
-                verify_output_string += "_______________\n\n"
+                        verify_output_string += " No error detected\n\n"   
+                        
 
         # Empirical Bernstein Stopping algorithm to see if we should continue sampling
+        if len(samples) == 0:
+                continue
+        
         mean_rv_t = compute_mean(samples)
         ct = compute_ct(samples, test_num, mean_rv_t, delta, rv_range)
 
@@ -145,18 +148,13 @@ while (1 + error) * lower_bound < (1 - error) * upper_bound:
 
         print "Mean RV: %f ct: %f LB: %f UB: %f" % (mean_rv_t, ct, lower_bound, upper_bound)
 
-print "Executed: %d tests. Desired accuracy reached!" % len(samples)
+print "Executed: %d tests. Desired accuracy reached!" % test_num
+total_time=time.time()-start
 
 with open (VERIFY_LOG_FILE, 'w') as f:
         f.write(verify_log_string)
 with open (VERIFY_OUTPUT_FILE, 'w') as f:
         f.write(verify_output_string)
 
-total_time=time.time()-start
-print " "
-if (tests_failed > 0):
-    print "%d Tests failed and %d Tests passed out of %d Tests" % (tests_failed, N-tests_failed, N)
-else:
-    print "All tests passed, no errors detected."
-
+print "\n%d Tests failed and %d Tests passed out of %d Tests" % (tests_failed, test_num-tests_failed, test_num)
 print "Total time: %f" % total_time 

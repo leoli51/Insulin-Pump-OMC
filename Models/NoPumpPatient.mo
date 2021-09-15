@@ -1,21 +1,19 @@
 model NoPumpPatient
 // Patient model (based on "Roberto Visentin, Claudio Cobelli, Chiara Dalla Man. The Padova Type 2 Diabetes Simulator from Triple-Tracer Single Meal Studies: In Silico Trials also possible in Rare but Not-So-Rare Individuals. Diabetes Technology and Therapeutics, 2020")
 
-InputReal eating;           // variable representing the meals of the patient 20 if the patient is eating 0 otherwise
+InputReal eating;          
 InputReal meal_dose;
-OutputReal glucose;       // glucose level of the patient"
+OutputReal glucose;   
 
-//Modelica.Blocks.Continuous.Integrator glucoseMean;
-//Modelica.Blocks.Discrete.Sampler glucose_sampler(samplePeriod = 1);
 Real glucose_integral;
 Real glucose_mean;
 
 //Patient data (default values)
-parameter Integer Sex = 0;                        //0 [0-1]; 0=F, 1=M
-parameter Real Age    = 54.9;                     //54.9 [50-62]
-parameter Real Height = 168;                      //168 [163-175];
-parameter Real BW     = 96;                       //96 [83-104]
-parameter Real BMI    = (BW / ((Height/100)^2));  //33.77 [28.25-37.14];
+parameter Integer Sex = 1;                        // [0-1] 0=F, 1=M
+parameter Real Age    = 55;                       // [50-62]
+parameter Real Height = 172;                      // [163-175]
+parameter Real BW     = 96;                       // [83-104]
+parameter Real BMI    = (BW / ((Height/100)^2));  // [28.25-37.14]
 
 parameter Real k1   = 0.066 ; 
 parameter Real k2   = 0.043 ; 

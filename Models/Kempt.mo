@@ -1,5 +1,5 @@
+// Function Kempt(Qsto) as described in the A5-A6-A7-A8 formulas of the T2D simulation paper
 function Kempt
-//Function Kempt(Qsto) as described in the A5-A6-A7-A8 formulas of the T2D simulation paper
 
 InputReal b;
 InputReal d;

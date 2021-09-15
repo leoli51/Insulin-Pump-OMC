@@ -9,7 +9,7 @@ parameter Real T = 10;          // sampling time of the pump (10 minutes)
 parameter Real targetmin = 90;  // lower bound of target glucose range
 parameter Real targetmax = 110; // upper bound of target glucose range
 parameter Real mindose = 1;
-parameter Real insulin_multiplier = 8;//6.2;
+parameter Real insulin_multiplier = 8;
 parameter Real change = 1;      
 
 Real prev;       // glucose value at time - 1
