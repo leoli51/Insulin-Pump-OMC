@@ -65,7 +65,7 @@ def find_best_kpi(start, stop, step, test_per_value=100):
                                 f.write(parameter_string)
 
                         # run simulation
-                        os.system("./System -overrideFile=modelica_rand.in -s=rungekutta  >> %s" % SYNTH_LOG_FILE)
+                        os.system("./System -overrideFile=modelica_rand.in -s=rungekutta")
 
                         # check if there was some critical error .. in case continue
                         glucose_critical = omc.sendExpression("val(fm.glucoseCritical, "+str(stopTime)+", \"System_res.mat\")")
@@ -75,6 +75,7 @@ def find_best_kpi(start, stop, step, test_per_value=100):
                         if glucose_critical != 0.0:
                                 print "critical value of glucose for insulin_multiplier=%f" % test_value
                                 print "Skipping dangerous value!"
+                                kpis.clear()
                                 break
                         
                         # retrieve kpi parameters  
